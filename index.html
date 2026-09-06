@@ -102,7 +102,8 @@
       <button id="mStd" class="on">Standard</button>
       <button id="mStar">Golden Star</button>
     </div>
-    <div class="hint">Roll the 7 dice. Each number tells you where to place one of the 7 black <b>blocker</b> pieces that come with the game &mdash; type those 7 numbers here (order does not matter). The solver fills everything else.</div>
+    <div class="hint" id="modeDesc"></div>
+    <div class="hint">Roll the 7 dice and mark those 7 squares with the black blocker pieces (anything works if you lost them). Type the 7 numbers here &mdash; the solver fills every other square with the 11 pieces.</div>
     <div class="combo" id="combo"></div>
     <div class="actions">
       <button class="btn primary" id="solveBtn">Solve</button>
@@ -214,7 +215,7 @@ function renderAll(){renderBoard();renderHist()}
 renderAll();renderScore();
 
 /* ---------------- solver engine ---------------- */
-const PCOL=['#5b7cfa','#e8c94c','#e07bb0','#d8524f','#77c25b','#e88b3c','#2e7d4f','#8d5bd8','#9a6b45','#4aa8d8'];
+const PCOL=['#5b7cfa','#e8c94c','#e07bb0','#d8524f','#77c25b','#e88b3c','#2e7d4f','#8d5bd8','#9a6b45','#8fd4ea','#4aa8d8'];
 let DATA=null,engineReady=false,FITS=[],BYTRI=new Map();
 
 const svgHost=()=>document.getElementById('svgHost');
@@ -439,16 +440,23 @@ document.getElementById('prevSol').addEventListener('click',()=>{if(solIdx>0){so
 document.getElementById('nextSol').addEventListener('click',()=>{if(solIdx<sols.length-1){solIdx++;renderSol()}});
 document.getElementById('mStd').addEventListener('click',()=>setMode('std'));
 document.getElementById('mStar').addEventListener('click',()=>setMode('star'));
+function modeDesc(){
+  document.getElementById('modeDesc').innerHTML = mode==='std'
+    ? 'Uses all <b>11 pieces</b>, including the two blue ones placed separately.'
+    : 'Golden Star challenge: the <b>two blue pieces join into a hexagon</b> &mdash; the solver uses that instead (10 pieces).';
+}
 function setMode(m){
   if(mode===m)return;
   mode=m;
   document.getElementById('mStd').classList.toggle('on',m==='std');
   document.getElementById('mStar').classList.toggle('on',m==='star');
   if(engineReady){
-    buildFits();sols=[];document.getElementById('boardWrap').style.display='none';
+    buildFits();sols=[];totalFound=0;document.getElementById('boardWrap').style.display='none';
     document.getElementById('solverStatus').textContent='Engine ready — enter the 7 blocker numbers.';
   }
+  modeDesc();
 }
+modeDesc();
 </script>
 </body>
 </html>
