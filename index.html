@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genius Star — Tournament</title>
+<style>
+  :root{
+    --bg:#0d0d11; --card:#15151b; --card2:#1b1b23; --line:#26262f; --line2:#33333f;
+    --txt:#e9e9ee; --dim:#8f8fa0; --gold:#e8b64c; --win:#7dd8a6; --red:#e06a7d;
+    --mono:ui-monospace,'SF Mono','Cascadia Code',Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:540px;margin:0 auto;padding:28px 16px 80px}
+  header{margin-bottom:26px}
+  header h1{font-size:15px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
+  header p{font-size:12px;color:var(--dim);margin-top:3px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+  h2{font-size:11px;font-weight:600;letter-spacing:2.2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  h2 .aux{font-size:11px;letter-spacing:0;text-transform:none}
+  /* teams */
+  .trow{display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--card2);border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+  .trow .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .trow .tname{flex:1;font-weight:600;font-size:14px;outline:none;border-bottom:1px dashed transparent;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trow .tname:focus{border-bottom-color:var(--gold)}
+  .trow .tscore{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--gold);min-width:34px;text-align:right}
+  .trow .del{background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1}
+  .trow .del:hover{color:var(--red)}
+  .lead-row{border-color:var(--gold)}
+  .lead-row .rank{color:var(--gold);font-weight:700}
+  .rank{font-family:var(--mono);font-size:12px;color:var(--dim);width:18px}
+  .iconbtn{background:var(--card2);border:1px solid var(--line2);color:var(--txt);border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer}
+  .iconbtn:hover{border-color:var(--gold);color:var(--gold)}
+  /* scoring */
+  .srow{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--card2);border-radius:8px;margin-bottom:6px}
+  .srow label{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .srow input{width:64px;background:var(--bg);border:1px solid var(--line2);border-radius:7px;color:var(--txt);font-family:var(--mono);font-size:15px;font-weight:700;text-align:center;padding:8px 4px}
+  .srow input:focus{outline:none;border-color:var(--gold)}
+  .actions{display:flex;gap:8px;margin-top:10px}
+  .btn{flex:1;border:none;border-radius:8px;padding:11px 0;font-size:13px;font-weight:700;cursor:pointer}
+  .btn.primary{background:var(--gold);color:#141414}
+  .btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--dim);flex:0 0 auto;padding:11px 16px}
+  .btn:active{transform:scale(.97)}
+  /* history */
+  .hrow{font-size:12.5px;color:var(--dim);padding:7px 2px;border-bottom:1px solid var(--line);line-height:1.6}
+  .hrow:last-child{border:none}
+  .hrow b{color:var(--txt)}
+  .hrow .rw{color:var(--gold);font-weight:700}
+  /* solver */
+  .mode{display:flex;gap:0;border:1px solid var(--line2);border-radius:8px;overflow:hidden;margin-bottom:12px}
+  .mode button{flex:1;background:transparent;border:none;color:var(--dim);font-size:12px;font-weight:600;letter-spacing:1px;padding:9px 0;cursor:pointer;text-transform:uppercase}
+  .mode button.on{background:var(--gold);color:#141414}
+  .combo{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
+  .combo input{width:100%;background:var(--bg);border:1px solid var(--line2);border-radius:7px;color:var(--txt);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center;padding:9px 2px}
+  .combo input:focus{outline:none;border-color:var(--gold)}
+  .combo input.bad{border-color:var(--red)}
+  .hint{font-size:11.5px;color:var(--dim);line-height:1.5;margin-bottom:10px}
+  #solverStatus{font-size:12.5px;color:var(--dim);margin:10px 0 0;line-height:1.5}
+  #solverStatus b{color:var(--txt);font-family:var(--mono)}
+  #solverStatus .cnt{color:var(--gold);font-family:var(--mono);font-weight:700}
+  .solnav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+  .solnav button{background:var(--card2);border:1px solid var(--line2);color:var(--txt);border-radius:7px;padding:7px 18px;font-size:13px;cursor:pointer}
+  .solnav button:disabled{opacity:.3;cursor:default}
+  .solnav .pos{font-family:var(--mono);font-size:13px;color:var(--gold);min-width:70px;text-align:center}
+  #boardWrap{margin-top:12px;display:none}
+  svg{width:100%;height:auto;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:8px}
+  .legend span{font-size:10.5px;color:var(--dim);display:flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .err{color:var(--red)!important}
+  .foot{text-align:center;font-size:11px;color:#55555f;margin-top:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Genius Star</h1>
+    <p>Tournament tracker &amp; puzzle solver</p>
+  </header>
+
+  <section>
+    <h2>Leaderboard <span class="aux">tap a name to rename</span></h2>
+    <div id="board"></div>
+    <div class="actions">
+      <button class="iconbtn" id="addTeam">+ Add team</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Record a round <span class="aux">points scored this round</span></h2>
+    <div id="score"></div>
+    <div class="actions">
+      <button class="btn primary" id="saveRound">Save round</button>
+      <button class="btn ghost" id="resetAll">Reset</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Solver</h2>
+    <div class="mode">
+      <button id="mStd" class="on">Standard</button>
+      <button id="mStar">Golden Star</button>
+    </div>
+    <div class="hint">Roll the 7 dice. Each number tells you where to place one of the 7 black <b>blocker</b> pieces that come with the game &mdash; type those 7 numbers here (order does not matter). The solver fills everything else.</div>
+    <div class="combo" id="combo"></div>
+    <div class="actions">
+      <button class="btn primary" id="solveBtn">Solve</button>
+      <button class="btn ghost" id="randRoll">Random roll</button>
+    </div>
+    <div id="solverStatus">Loading puzzle engine&hellip;</div>
+    <div id="boardWrap">
+      <div id="svgHost"></div>
+      <div class="legend" id="legend"></div>
+      <div class="solnav">
+        <button id="prevSol">&lsaquo;</button>
+        <div class="pos" id="solPos"></div>
+        <button id="nextSol">&rsaquo;</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>History</h2>
+    <div id="hist"></div>
+  </section>
+
+  <div class="foot">scores are saved on this device</div>
+</div>
+
+<script>
+/* ---------------- state ---------------- */
+const TEAM_COLORS=['#e06a7d','#5b8cff','#7dd8a6','#e8b64c','#b06bff','#ff9e5e','#4fc9d8','#d86fa8'];
+let S=JSON.parse(localStorage.getItem('gs2')||'null')||{
+  teams:[{n:'Team A',p:0},{n:'Team B',p:0},{n:'Team C',p:0},{n:'Team D',p:0},{n:'Team E',p:0}],
+  hist:[]
+};
+const save=()=>localStorage.setItem('gs2',JSON.stringify(S));
+
+/* ---------------- leaderboard ---------------- */
+function renderBoard(){
+  const sorted=S.teams.map((t,i)=>({...t,i})).sort((a,b)=>b.p-a.p);
+  let rank=0,prev=null;
+  document.getElementById('board').innerHTML=sorted.map(t=>{
+    if(t.p!==prev){rank++;prev=t.p}
+    return `<div class="trow ${rank===1&&t.p>0?'lead-row':''}">
+      <span class="rank">${rank===1&&t.p>0?1:rank}</span>
+      <span class="dot" style="background:${TEAM_COLORS[t.i%8]}"></span>
+      <span class="tname" contenteditable="plaintext-only" data-i="${t.i}">${t.n}</span>
+      <span class="tscore">${t.p}</span>
+      <button class="del" data-del="${t.i}" title="remove">&times;</button>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.tname').forEach(el=>{
+    el.addEventListener('blur',()=>{
+      const v=el.textContent.trim().slice(0,24);
+      if(v){S.teams[+el.dataset.i].n=v;save()}else{el.textContent=S.teams[+el.dataset.i].n}
+      renderScore();
+    });
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();el.blur()}});
+  });
+  document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.del;
+    if(S.teams.length<=2)return;
+    if(confirm('Remove '+S.teams[i].n+'?')){S.teams.splice(i,1);save();renderAll()}
+  }));
+}
+document.getElementById('addTeam').addEventListener('click',()=>{
+  if(S.teams.length>=8)return;
+  S.teams.push({n:'Team '+String.fromCharCode(65+S.teams.length),p:0});
+  save();renderAll();
+});
+
+/* ---------------- scoring ---------------- */
+function renderScore(){
+  document.getElementById('score').innerHTML=S.teams.map((t,i)=>`
+    <div class="srow">
+      <label>${t.n}</label>
+      <input type="number" inputmode="numeric" id="r${i}" value="0" min="0" max="999">
+    </div>`).join('');
+}
+document.getElementById('saveRound').addEventListener('click',()=>{
+  const gains=[];let any=false;
+  S.teams.forEach((t,i)=>{
+    const v=Math.max(0,parseInt(document.getElementById('r'+i).value)||0);
+    t.p+=v;if(v)any=true;
+    gains.push({n:t.n,p:v});
+  });
+  if(!any)return;
+  gains.sort((a,b)=>b.p-a.p);
+  const w=gains[0].p>0?gains.filter(g=>g.p===gains[0].p).map(g=>g.n):null;
+  const line=gains.map(g=>`${g.n} <b>${g.p}</b>`).join(' &nbsp;&middot;&nbsp; ');
+  S.hist.unshift(`R${S.hist.length+1}|${line}|${w?w.join(', '):''}`);
+  save();renderAll();renderScore();
+});
+document.getElementById('resetAll').addEventListener('click',()=>{
+  if(confirm('Reset all scores and history? Team names are kept.')){
+    S.teams.forEach(t=>t.p=0);S.hist=[];save();renderAll();renderScore();
+  }
+});
+
+/* ---------------- history ---------------- */
+function renderHist(){
+  const el=document.getElementById('hist');
+  el.innerHTML=S.hist.length?S.hist.map(h=>{
+    const [r,line,w]=h.split('|');
+    const wl=w?w.split(', '):[];
+    let html=`<div class="hrow"><span class="rw">${r}</span> &nbsp;`;
+    html+=wl.length?line.replace(new RegExp('('+wl.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+') (<b>','g'),'<span class="rw">$1</span> <b>'):line;
+    return html+'</div>';
+  }).join(''):'<div class="hrow">No rounds recorded yet.</div>';
+}
+function renderAll(){renderBoard();renderHist()}
+renderAll();renderScore();
+
+/* ---------------- solver engine ---------------- */
+const PCOL=['#5b7cfa','#e8c94c','#e07bb0','#d8524f','#77c25b','#e88b3c','#2e7d4f','#8d5bd8','#9a6b45','#4aa8d8'];
+let DATA=null,engineReady=false,FITS=[],BYTRI=new Map();
+
+const svgHost=()=>document.getElementById('svgHost');
+let mode='std', sols=[], solIdx=0, totalFound=0, searchComplete=true;
+const fmtN=n=>n.toLocaleString('en-US');
+
+function keyOf(t){return t[0]*64+t[1]*8+t[2]}
+function parseKey(k){return [k>>6,(k>>3)&7,k&7]}
+
+fetch('genius_data.json').then(r=>r.json()).then(d=>{
+  DATA=d;
+  DATA.TRIS=d.triangles;
+  buildFits();
+  engineReady=true;
+  document.getElementById('solverStatus').textContent='Engine ready — enter the 7 blocker numbers.';
+});
+
+function buildFits(){
+  const valid=new Set(DATA.TRIS);
+  const pieces=mode==='std'?DATA.piecesStd:DATA.piecesStar;
+  FITS=[];
+  pieces.forEach((perms,pi)=>{
+    const seen=new Set();
+    perms.forEach(perm=>{
+      DATA.shifts.forEach(sh=>{
+        const s0=sh>>6,s1=(sh>>3)&7,s2=sh&7;
+        let ok=true;const placed=[];
+        for(const k of perm){
+          const a=k>>6,b=(k>>3)&7,c=k&7;
+          const kk=keyOf([a+s0,b+s1,c+s2]);
+          if(!valid.has(kk)){ok=false;break}
+          placed.push(kk);
+        }
+        if(ok){
+          const trigs=[...new Set(placed)].sort((x,y)=>x-y);
+          const fs=pi+'|'+trigs.join(',');
+          if(!seen.has(fs)){
+            seen.add(fs);
+            let lo=0,hi=0;
+            trigs.forEach(t=>{const i=DATA.TRIS.indexOf(t); if(i<24)lo|=(1<<i); else hi|=(1<<(i-24));});
+            FITS.push({pi,trigs,lo,hi});
+          }
+        }
+      });
+    });
+  });
+  BYTRI.clear();
+  FITS.forEach((f,fi)=>f.trigs.forEach(t=>{
+    if(!BYTRI.has(t))BYTRI.set(t,[]);
+    BYTRI.get(t).push(fi);
+  }));
+}
+
+function solve(blockers){
+  const bkeys=blockers.map(n=>DATA.TRIS[n-1]);
+  const bset=new Set(bkeys);
+  let bLo=0,bHi=0;
+  DATA.TRIS.forEach((k,i)=>{if(bset.has(k)){if(i<24)bLo|=(1<<i);else bHi|=(1<<(i-24));}});
+  const TLO=0xFFFFFF & ~bLo, THI=0xFFFFFF & ~bHi;
+  const sols=[];const used=new Array(mode==='std'?11:10).fill(false);
+  let count=0;const COUNT_CAP=10000;const t0=performance.now();
+  let stop=false;
+  function rec(lo,hi,out){
+    if(stop)return;
+    if(!searchComplete&&(count>=COUNT_CAP||performance.now()-t0>4000)){stop=true;return}
+    if((lo&TLO)===TLO&&(hi&THI)===THI){
+      count++;
+      if(sols.length<200)sols.push(out.slice());
+      return;
+    }
+    let ti=-1;
+    for(let i=0;i<48;i++){
+      const k=DATA.TRIS[i];
+      if(bset.has(k))continue;
+      const bit=i<24?(lo>>i)&1:(hi>>(i-24))&1;
+      if(!bit){ti=i;break}
+    }
+    if(ti<0)return;
+    for(const fi of (BYTRI.get(DATA.TRIS[ti])||[])){
+      const f=FITS[fi];
+      if(used[f.pi])continue;
+      if((f.lo&lo)||(f.hi&hi))continue;
+      used[f.pi]=true;out.push(f);
+      rec(lo|f.lo,hi|f.hi,out);
+      out.pop();used[f.pi]=false;
+    }
+  }
+  searchComplete=true;
+  rec(bLo,bHi,[]);
+  if(stop)searchComplete=false;
+  totalFound=searchComplete?count:null;
+  return sols;
+}
+
+/* ---------------- SVG board ---------------- */
+const A=[0,-1],B=[-Math.sqrt(3)/2,0.5],C=[Math.sqrt(3)/2,0.5];
+function triPoints(t){
+  const cx=A[0]*t[0]+B[0]*t[1]+C[0]*t[2];
+  const cy=A[1]*t[0]+B[1]*t[1]+C[1]*t[2];
+  const s=t[0]+t[1]+t[2];
+  const sign=s%2===1?1:-1;
+  const p1=[cx+sign*A[0],cy+sign*A[1]],p2=[cx+sign*B[0],cy+sign*B[1]],p3=[cx+sign*C[0],cy+sign*C[1]];
+  return [p1,p2,p3].map(p=>p.join(',')).join(' ');
+}
+
+function renderSol(){
+  if(!sols.length)return;
+  const sol=sols[solIdx];
+  const colFor={};sol.forEach(f=>{f.trigs.forEach(t=>colFor[t]=f.pi)});
+  const W=10.6,cxm=5.3;
+  let defs=`<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0.04" stdDeviation="0.05" flood-color="#000" flood-opacity="0.5"/></filter></defs>`;
+  let svg=`<svg viewBox="-5.4 -6.2 10.8 12.4" xmlns="http://www.w3.org/2000/svg">`+defs;
+  DATA.TRIS.forEach((k,i)=>{
+    const t=parseKey(k);
+    const pts=triPoints(t);
+    svg+=`<polygon points="${pts}" fill="none" stroke="#26262f" stroke-width="0.03"/>`;
+  });
+  sol.forEach(f=>{
+    f.trigs.forEach(t=>{
+      const pts=triPoints(parseKey(t));
+      svg+=`<polygon points="${pts}" fill="${PCOL[f.pi]}" stroke="#0d0d11" stroke-width="0.025"/>`;
+    });
+  });
+  blockers.forEach(n=>{
+    const k=DATA.TRIS[n-1];
+    const t=parseKey(k);
+    const pts=triPoints(t).split(' ').map(p=>p.split(',').map(Number));
+    const cx=(pts[0][0]+pts[1][0]+pts[2][0])/3,cy=(pts[0][1]+pts[1][1]+pts[2][1])/3;
+    svg+=`<circle cx="${cx}" cy="${cy}" r="0.36" fill="#121216" stroke="var(--gold)" stroke-width="0.09"/>`;
+    svg+=`<text x="${cx}" y="${cy+0.14}" text-anchor="middle" font-size="0.44" font-weight="800" fill="var(--gold)" font-family="monospace">${n}</text>`;
+  });
+  svg+='</svg>';
+  svgHost().innerHTML=svg;
+  document.getElementById('solPos').textContent=(solIdx+1)+' / '+sols.length;
+  document.getElementById('prevSol').disabled=solIdx===0;
+  document.getElementById('nextSol').disabled=solIdx>=sols.length-1;
+  const legend=document.getElementById('legend');
+  legend.innerHTML=sol.map(f=>`<span><i style="background:${PCOL[f.pi]}"></i>piece ${f.pi+1}</span>`).join('')
+    +`<span><i style="background:#121216;border:2px solid var(--gold);border-radius:50%"></i>blocker (dice number)</span>`;
+}
+
+/* ---------------- combo inputs ---------------- */
+let blockers=[];
+function renderCombo(){
+  const host=document.getElementById('combo');
+  host.innerHTML=Array.from({length:7},(_,i)=>`<input id="b${i}" inputmode="numeric" maxlength="2" value="${blockers[i]??''}" placeholder="&ndash;">`).join('');
+  host.querySelectorAll('input').forEach((el,i)=>{
+    el.addEventListener('input',()=>{
+      el.classList.remove('bad');
+      blockers[i]=el.value.replace(/\D/g,'');
+      if(el.value.length===2){
+        const nxt=host.querySelectorAll('input')[i+1];
+        if(nxt)nxt.focus();
+      }
+    });
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter')doSolve();
+      if(e.key==='Backspace'&&!el.value&&i>0){
+        const prv=host.querySelectorAll('input')[i-1];prv.focus();prv.value='';blockers[i-1]='';
+      }
+    });
+  });
+}
+renderCombo();
+
+function validateBlockers(){
+  let ok=true;const vals=[];
+  const DICE=DATA.dice;
+  document.querySelectorAll('#combo input').forEach(el=>{
+    const v=parseInt(el.value);
+    if(!v||v<1||v>48){el.classList.add('bad');ok=false}
+    vals.push(v||0);
+  });
+  if(!ok)return null;
+  const seen=new Set();
+  for(const v of vals){
+    if(seen.has(v)){return null}
+    seen.add(v);
+  }
+  if(DATA){
+    const remaining=vals.slice();
+    for(const die of DICE){
+      const hit=die.filter(n=>remaining.includes(n));
+      if(hit.length!==1)return null;
+      remaining.splice(remaining.indexOf(hit[0]),1);
+    }
+  }
+  return vals;
+}
+
+function doSolve(){
+  if(!engineReady)return;
+  const v=validateBlockers();
+  const st=document.getElementById('solverStatus');
+  if(!v){st.innerHTML='Enter all seven blocker numbers (each must come from a different die).';return}
+  blockers=v;
+  const t0=performance.now();
+  sols=solve(v);
+  solIdx=0;
+  const ms=Math.round(performance.now()-t0);
+  const bw=document.getElementById('boardWrap');
+  if(!sols.length){
+    bw.style.display='none';
+    st.innerHTML=`No <b>${mode==='std'?'standard':'golden star'}</b> solution exists for this roll. <span class="err">Double-check the numbers.</span>`;
+    return;
+  }
+  bw.style.display='block';
+  const label=mode==='std'?'solutions':'golden star solutions';
+  const cnt=totalFound===null?fmtN(10000)+'+':fmtN(totalFound);
+  const extra=totalFound===null?` (search stopped early)`:``;
+  const shown=sols.length<totalFound?` &mdash; browsing first ${sols.length}`:``;
+  st.innerHTML=`<span class="cnt">${cnt}</span> ${label} found in <b>${ms} ms</b>${extra}${shown}`;
+  renderSol();
+}
+document.getElementById('solveBtn').addEventListener('click',doSolve);
+document.getElementById('randRoll').addEventListener('click',()=>{
+  blockers=DATA.dice.map(die=>die[Math.floor(Math.random()*die.length)]).sort((a,b)=>a-b);
+  renderCombo();
+  doSolve();
+});
+document.getElementById('prevSol').addEventListener('click',()=>{if(solIdx>0){solIdx--;renderSol()}});
+document.getElementById('nextSol').addEventListener('click',()=>{if(solIdx<sols.length-1){solIdx++;renderSol()}});
+document.getElementById('mStd').addEventListener('click',()=>setMode('std'));
+document.getElementById('mStar').addEventListener('click',()=>setMode('star'));
+function setMode(m){
+  if(mode===m)return;
+  mode=m;
+  document.getElementById('mStd').classList.toggle('on',m==='std');
+  document.getElementById('mStar').classList.toggle('on',m==='star');
+  if(engineReady){
+    buildFits();sols=[];document.getElementById('boardWrap').style.display='none';
+    document.getElementById('solverStatus').textContent='Engine ready — enter the 7 blocker numbers.';
+  }
+}
+</script>
+</body>
+</html>
